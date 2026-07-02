@@ -2,6 +2,7 @@ FROM golang:1.26 AS build
 WORKDIR /src
 COPY backend/ ./backend/
 WORKDIR /src/backend
+ENV GOPROXY=https://goproxy.cn,direct GOSUMDB=off
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags "-s -w" -o /out/server ./cmd/server
 
 FROM debian:bookworm-slim

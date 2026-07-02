@@ -9,6 +9,7 @@ services:
 
   surrealdb:
     image: surrealdb/surrealdb:latest
+    user: root
     command: start --user root --pass root --bind 0.0.0.0:8000 rocksdb:/data/graph.db
     volumes:
       - surreal_data:/data
@@ -21,11 +22,28 @@ services:
     environment:
       - SKIP_ENGINE_LAUNCH=1
       - SKIP_SIDECAR_LAUNCH=1
+      - BRIDGE_API_TOKEN=amitia-bridge-secret-change-me
     volumes:
       - backend_data:/app/data
     depends_on:
       - qdrant
       - surrealdb
+    restart: unless-stopped
+
+  wechat-sidecar:
+    image: node:22-slim
+    network_mode: "service:backend"
+    working_dir: /app
+    volumes:
+      - ../backend/sidecar/bundle.mjs:/app/bundle.mjs:ro
+    command: node bundle.mjs
+    environment:
+      - SIDECAR_HOST=127.0.0.1
+      - SIDECAR_PORT=9876
+      - CORE_URL=http://127.0.0.1:8899
+      - BRIDGE_API_TOKEN=amitia-bridge-secret-change-me
+    depends_on:
+      - backend
     restart: unless-stopped
 
   frontend:

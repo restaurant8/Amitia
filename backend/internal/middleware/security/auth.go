@@ -4,6 +4,7 @@ package security
 
 import (
 	"fmt"
+	"os"
 	"sync/atomic"
 
 	"github.com/gin-gonic/gin"
@@ -70,8 +71,13 @@ func extractBearer(c *gin.Context) string {
 }
 
 func AuthMiddleware(db *gorm.DB) gin.HandlerFunc {
+	bridgeToken := os.Getenv("BRIDGE_API_TOKEN")
 	return func(c *gin.Context) {
 		if tokenStr := extractBearer(c); tokenStr != "" {
+			if bridgeToken != "" && tokenStr == bridgeToken {
+				c.Next()
+				return
+			}
 			if claims, err := validateToken(tokenStr); err == nil {
 				setClaims(c, claims)
 				c.Next()
