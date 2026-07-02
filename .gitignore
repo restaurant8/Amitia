@@ -41,3 +41,9 @@ backend/qdrant/qdrant_linux_*
 release/qdrant/storage/
 release/qdrant/snapshots/
 wechat-chat-extractor/weFlow.zip
+
+# 构建/工具产生的垃圾
+.npm-cache/
+*.orig
+*.fork
+server.log

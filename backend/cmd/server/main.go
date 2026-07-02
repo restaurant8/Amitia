@@ -213,11 +213,15 @@ func initDatabase(db *gorm.DB) {
 
 func startQdrant() {
 	qcfg := config.AppCfg.Qdrant
-	log.Info("正在启动Qdrant...")
-	if err := qdrantDB.StartQdrant(); err != nil {
-		log.Error("Qdrant启动失败:", err)
-		log.Warn("向量检索功能不可用，将回退到关键词搜索")
-		return
+	if os.Getenv("SKIP_ENGINE_LAUNCH") == "1" {
+		log.Info(fmt.Sprintf("外部引擎模式：跳过启动Qdrant，直接连接 %s:%d", qcfg.Host, qcfg.Port))
+	} else {
+		log.Info("正在启动Qdrant...")
+		if err := qdrantDB.StartQdrant(); err != nil {
+			log.Error("Qdrant启动失败:", err)
+			log.Warn("向量检索功能不可用，将回退到关键词搜索")
+			return
+		}
 	}
 	if err := qdrantDB.WaitForQdrant(qcfg.Port); err != nil {
 		log.Error("等待Qdrant就绪超时:", err)
@@ -242,11 +246,15 @@ func startQdrant() {
 
 func startSurreal() {
 	cfg := config.AppCfg.Surreal
-	log.Info("正在启动SurrealDB...")
-	if err := surrealdbDB.StartSurreal(); err != nil {
-		log.Error("SurrealDB启动失败:", err)
-		log.Warn("图谱功能不可用")
-		return
+	if os.Getenv("SKIP_ENGINE_LAUNCH") == "1" {
+		log.Info(fmt.Sprintf("外部引擎模式：跳过启动SurrealDB，直接连接 %s:%d", cfg.Host, cfg.Port))
+	} else {
+		log.Info("正在启动SurrealDB...")
+		if err := surrealdbDB.StartSurreal(); err != nil {
+			log.Error("SurrealDB启动失败:", err)
+			log.Warn("图谱功能不可用")
+			return
+		}
 	}
 	if err := surrealdbDB.WaitForSurreal(cfg.Port); err != nil {
 		log.Error("等待SurrealDB就绪超时:", err)

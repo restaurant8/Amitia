@@ -1,0 +1,42 @@
+name: build-wechat-sidecar
+
+on:
+  push:
+    paths:
+      - "backend/sidecar/**"
+      - ".github/workflows/build-wechat-sidecar.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install sidecar dependencies
+        working-directory: backend/sidecar
+        run: npm install --no-audit --no-fund
+
+      - name: Build bundle
+        working-directory: backend/sidecar
+        run: node build.mjs
+
+      - name: Stage bundle
+        working-directory: backend/sidecar
+        run: mv bundle.new.mjs bundle.mjs
+
+      - name: Upload bundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wechat-sidecar-bundle
+          path: backend/sidecar/bundle.mjs
+          if-no-files-found: error

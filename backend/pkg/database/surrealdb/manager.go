@@ -211,7 +211,11 @@ func StopSurreal() {
 }
 
 func WaitForSurreal(port int) error {
-	url := fmt.Sprintf("http://127.0.0.1:%d/health", port)
+	host := config.AppCfg.Surreal.Host
+	if host == "" {
+		host = "127.0.0.1"
+	}
+	url := fmt.Sprintf("http://%s:%d/health", host, port)
 	client := http.Client{Timeout: 500 * time.Millisecond}
 	for i := 0; i < 60; i++ {
 		time.Sleep(500 * time.Millisecond)

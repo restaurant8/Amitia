@@ -4,13 +4,33 @@ package security
 
 import (
 	"fmt"
+	"sync/atomic"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/u-ai/backend/config"
 	"github.com/u-ai/backend/pkg/comment/response"
 	"github.com/u-ai/backend/pkg/util"
+	"gorm.io/gorm"
 )
+
+var adminExistsFlag int32
+
+func adminExists(db *gorm.DB) bool {
+	if atomic.LoadInt32(&adminExistsFlag) == 1 {
+		return true
+	}
+	if db == nil {
+		return false
+	}
+	var n int64
+	db.Table("auth_users").Where("role = ?", "admin").Count(&n)
+	if n > 0 {
+		atomic.StoreInt32(&adminExistsFlag, 1)
+		return true
+	}
+	return false
+}
 
 func validateToken(tokenStr string) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
@@ -41,44 +61,49 @@ func setClaims(c *gin.Context, claims jwt.MapClaims) {
 	}
 }
 
-func AuthMiddleware() gin.HandlerFunc {
+func extractBearer(c *gin.Context) string {
+	auth := c.GetHeader("Authorization")
+	if len(auth) > 7 && auth[:7] == "Bearer " {
+		return auth[7:]
+	}
+	return ""
+}
+
+func AuthMiddleware(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		auth := c.GetHeader("Authorization")
-		if len(auth) <= 7 || auth[:7] != "Bearer " {
-			util.ErrorResponse(c, response.Unauthorized, "请先登录", nil)
-			c.Abort()
+		if tokenStr := extractBearer(c); tokenStr != "" {
+			if claims, err := validateToken(tokenStr); err == nil {
+				setClaims(c, claims)
+				c.Next()
+				return
+			}
+		}
+		if !adminExists(db) {
+			c.Next()
 			return
 		}
-		claims, err := validateToken(auth[7:])
-		if err != nil {
-			util.ErrorResponse(c, response.InvalidToken, "令牌无效或已过期", nil)
-			c.Abort()
-			return
-		}
-		setClaims(c, claims)
-		c.Next()
+		util.ErrorResponse(c, response.Unauthorized, "请先登录", nil)
+		c.Abort()
 	}
 }
 
-func AuthQueryMiddleware() gin.HandlerFunc {
+func AuthQueryMiddleware(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenStr := c.Query("token")
 		if tokenStr == "" {
-			auth := c.GetHeader("Authorization")
-			if len(auth) > 7 && auth[:7] == "Bearer " {
-				tokenStr = auth[7:]
+			tokenStr = extractBearer(c)
+		}
+		if tokenStr != "" {
+			if claims, err := validateToken(tokenStr); err == nil {
+				setClaims(c, claims)
+				c.Next()
+				return
 			}
 		}
-		if tokenStr == "" {
-			c.AbortWithStatus(401)
+		if !adminExists(db) {
+			c.Next()
 			return
 		}
-		claims, err := validateToken(tokenStr)
-		if err != nil {
-			c.AbortWithStatus(401)
-			return
-		}
-		setClaims(c, claims)
-		c.Next()
+		c.AbortWithStatus(401)
 	}
 }

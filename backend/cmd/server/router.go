@@ -41,7 +41,7 @@ func setupRouter(ctx *app.AppContext, graphSvc graph.Service) *gin.Engine {
 		user.RegisterUserRouter(apiGroup, ctx)
 
 		protected := apiGroup.Group("")
-		protected.Use(security.AuthMiddleware())
+		protected.Use(security.AuthMiddleware(ctx.DB))
 
 		character.RegisterCharacterRouter(protected, ctx)
 		chatRepo := chat.NewRepository(ctx)
@@ -78,7 +78,7 @@ func setupRouter(ctx *app.AppContext, graphSvc graph.Service) *gin.Engine {
 		tts.RegisterTtsRouter(protected, ctx)
 		asr.RegisterAsrRouter(protected, ctx)
 		wsGroup := apiGroup.Group("")
-		wsGroup.Use(security.AuthQueryMiddleware())
+		wsGroup.Use(security.AuthQueryMiddleware(ctx.DB))
 		realtime.RegisterRealtimeRouter(wsGroup, ctx)
 		vision.RegisterVisionRouter(protected, ctx)
 		embedding_config.RegisterEmbeddingConfigRouter(protected, ctx)

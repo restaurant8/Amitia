@@ -126,7 +126,11 @@ func StopQdrant() {
 }
 
 func WaitForQdrant(port int) error {
-	url := fmt.Sprintf("http://127.0.0.1:%d/readyz", port)
+	host := config.AppCfg.Qdrant.Host
+	if host == "" {
+		host = "127.0.0.1"
+	}
+	url := fmt.Sprintf("http://%s:%d/readyz", host, port)
 	client := http.Client{Timeout: 500 * time.Millisecond}
 	for i := 0; i < 60; i++ {
 		time.Sleep(500 * time.Millisecond)

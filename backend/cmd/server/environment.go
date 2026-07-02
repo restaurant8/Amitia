@@ -211,6 +211,13 @@ func (w *serviceWriter) Write(p []byte) (int, error) {
 func startEnvironment() *Environment {
 	runtimeRoot := util.RuntimeRoot()
 
+	if os.Getenv("SKIP_SIDECAR_LAUNCH") == "1" {
+		env := NewEnvironment(runtimeRoot)
+		env.SetupSignalHandler()
+		log.Println("[Env] SKIP_SIDECAR_LAUNCH=1，跳过附属侧车启动")
+		return env
+	}
+
 	bundledQQ := filepath.Join(runtimeRoot, "qq-sidecar", "bundle.mjs")
 	bundledWX := filepath.Join(runtimeRoot, "sidecar", "bundle.mjs")
 	_, qqOk := os.Stat(bundledQQ)

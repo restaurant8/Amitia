@@ -145,7 +145,7 @@ async function startCall() {
   const source = audioCtx.createMediaStreamSource(mediaStream)
   scriptNode = audioCtx.createScriptProcessor(4096, 1, 1)
 
-  const wsUrl = "ws://127.0.0.1:8899/api/realtime/session" +
+  const wsUrl = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/api/realtime/session` +
     "?apiKey=" + encodeURIComponent(config.apiKey) +
     "&voiceType=" + encodeURIComponent(config.voiceType) +
     "&resourceId=" + encodeURIComponent(config.resourceId) +

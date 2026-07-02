@@ -1,0 +1,44 @@
+name: amitia
+
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    volumes:
+      - qdrant_data:/qdrant/storage
+    restart: unless-stopped
+
+  surrealdb:
+    image: surrealdb/surrealdb:latest
+    command: start --user root --pass root --bind 0.0.0.0:8000 rocksdb:/data/graph.db
+    volumes:
+      - surreal_data:/data
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ..
+      dockerfile: deploy/backend.Dockerfile
+    environment:
+      - SKIP_ENGINE_LAUNCH=1
+      - SKIP_SIDECAR_LAUNCH=1
+    volumes:
+      - backend_data:/app/data
+    depends_on:
+      - qdrant
+      - surrealdb
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: deploy/frontend.Dockerfile
+    ports:
+      - "5178:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  qdrant_data:
+  surreal_data:
+  backend_data:

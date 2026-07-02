@@ -630,3 +630,10 @@ CREATE TABLE IF NOT EXISTS embedding_configs (
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now'))
 );
+
+
+CREATE TABLE IF NOT EXISTS model_scenario_routes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    scenario TEXT NOT NULL,
+    model_config_id INTEGER
+);

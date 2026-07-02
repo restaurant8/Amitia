@@ -131,7 +131,7 @@ async function start() {
   const source = inputCtx.createMediaStreamSource(mediaStream)
   scriptNode = inputCtx.createScriptProcessor(4096, 1, 1)
 
-  const baseUrl = "ws://127.0.0.1:8899/api/realtime/session"
+  const baseUrl = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/api/realtime/session`
   const params = new URLSearchParams({
     apiKey: props.apiKey,
     voiceType: props.voiceType || "zh_female_vv_jupiter_bigtts",
